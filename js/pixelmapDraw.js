@@ -1,8 +1,18 @@
-function drawPixelMap(paineis, canvasOrig, canvasPrev, totalLarguraPx, maxAlturaPx) {
+// =====================================================
+//           DESENHA O LAYOUT COMPLETO DO PIXEL MAP
+// =====================================================
+
+function drawPixelMap(
+  paineis,
+  canvasOrig,
+  canvasPrev,
+  totalLarguraPx,
+  maxAlturaPx
+) {
   canvasOrig.width = totalLarguraPx;
   canvasOrig.height = maxAlturaPx;
 
-  const ctxOrig = canvasOrig.getContext('2d');
+  const ctxOrig = canvasOrig.getContext("2d");
   ctxOrig.clearRect(0, 0, canvasOrig.width, canvasOrig.height);
 
   let offsetX = 0;
@@ -11,16 +21,21 @@ function drawPixelMap(paineis, canvasOrig, canvasPrev, totalLarguraPx, maxAltura
     offsetX += painel.totalX;
   });
 
-const wrapper = canvasPrev.parentElement;
-const wrapperWidth = wrapper.clientWidth;
-const wrapperHeight = window.innerHeight - wrapper.getBoundingClientRect().top - 120;
+  const wrapper = canvasPrev.parentElement;
+  const wrapperWidth = wrapper.clientWidth;
+  const wrapperHeight =
+    window.innerHeight - wrapper.getBoundingClientRect().top - 120;
 
-const scale = Math.min(wrapperWidth / totalLarguraPx, wrapperHeight / maxAlturaPx, 1);
-canvasPrev.width = totalLarguraPx * scale;
-canvasPrev.height = maxAlturaPx * scale;
+  const scale = Math.min(
+    wrapperWidth / totalLarguraPx,
+    wrapperHeight / maxAlturaPx,
+    1
+  );
 
+  canvasPrev.width = totalLarguraPx * scale;
+  canvasPrev.height = maxAlturaPx * scale;
 
-  const ctxPrev = canvasPrev.getContext('2d');
+  const ctxPrev = canvasPrev.getContext("2d");
   ctxPrev.clearRect(0, 0, canvasPrev.width, canvasPrev.height);
 
   offsetX = 0;
@@ -29,6 +44,10 @@ canvasPrev.height = maxAlturaPx * scale;
     offsetX += painel.totalX;
   });
 }
+
+// =====================================================
+//               DESENHA UM PAINEL INDIVIDUAL
+// =====================================================
 
 function drawSinglePanel(ctx, xOffset, painel, scale = 1, id = 0) {
   const { totalX, totalY, alinhamento, modX, modY, modelo, nome } = painel;
@@ -41,12 +60,21 @@ function drawSinglePanel(ctx, xOffset, painel, scale = 1, id = 0) {
   let yOffset = 0;
   const canvasHeight = ctx.canvas.height / scale;
 
-  if (alinhamento === 'top') yOffset = 0;
-  else if (alinhamento === 'middle') yOffset = (canvasHeight - totalY) / 2 * scale;
-  else if (alinhamento === 'bottom') yOffset = (canvasHeight - totalY) * scale;
+  if (alinhamento === "top") yOffset = 0;
+  else if (alinhamento === "middle")
+    yOffset = ((canvasHeight - totalY) / 2) * scale;
+  else if (alinhamento === "bottom") yOffset = (canvasHeight - totalY) * scale;
 
-  // Paleta fixa
-  const palette = ['#1d9bf0', '#198754', '#e83e8c', '#ffc107', '#6610f2', '#20c997', '#fd7e14'];
+  // Cores dos módulos
+  const palette = [
+    "#1d9bf0",
+    "#198754",
+    "#e83e8c",
+    "#ffc107",
+    "#6610f2",
+    "#20c997",
+    "#fd7e14",
+  ];
   const baseColor = palette[id % palette.length];
 
   function adjustColor(hex, amt) {
@@ -72,8 +100,8 @@ function drawSinglePanel(ctx, xOffset, painel, scale = 1, id = 0) {
     }
   }
 
-  // Círculo central
-  const circleRadius = Math.min(totalX, totalY) * scale / 2;
+  // Círculo e diagonais
+  const circleRadius = (Math.min(totalX, totalY) * scale) / 2;
   ctx.beginPath();
   ctx.arc(
     xOffset + width / 2,
@@ -86,7 +114,6 @@ function drawSinglePanel(ctx, xOffset, painel, scale = 1, id = 0) {
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  // Diagonais
   ctx.beginPath();
   ctx.moveTo(xOffset, yOffset);
   ctx.lineTo(xOffset + width, yOffset + height);
@@ -94,24 +121,33 @@ function drawSinglePanel(ctx, xOffset, painel, scale = 1, id = 0) {
   ctx.lineTo(xOffset, yOffset + height);
   ctx.stroke();
 
-  // Título
+  // Texto
   const fontBase = Math.min(width * 0.12, height * 0.16);
-  ctx.font = `${fontBase}px 'Roboto Condensed', sans-serif`;
+  const fontSmall = height * 0.048;
+
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillStyle = "#fff";
   ctx.shadowColor = "#000";
-  ctx.shadowBlur = 3;
-  ctx.fillText(nome, xOffset + width / 2, yOffset + height / 2 - fontBase * 0.4);
 
-  // Infos menores
-  const fontSmall = height * 0.048;
+  // Nome da tela
+  ctx.font = `${fontBase}px 'Roboto Condensed', sans-serif`;
+  ctx.shadowBlur = 3;
+  const centerY = yOffset + height / 2;
+  ctx.fillText(nome, xOffset + width / 2, centerY - fontBase * 0.6);
+
+  // Infos
   ctx.font = `${fontSmall}px 'Roboto Condensed', sans-serif`;
   ctx.shadowBlur = 2;
-  const text1 = `${totalX}x${totalY}`;
-  const text2 = `(${totalX}px x ${totalY}px)`;
-  ctx.fillText(text1, xOffset + width / 2, yOffset + height / 2 + fontSmall * 0.3);
-  ctx.fillText(text2, xOffset + width / 2, yOffset + height / 2 + fontSmall * 1.4);
+  const infoY = centerY + fontSmall * 0.6;
+  ctx.fillText(`${totalX}x${totalY}`, xOffset + width / 2, infoY);
+  ctx.fillText(
+    `(${Math.round((xOffset + width / 2) / scale)}, ${Math.round(
+      (yOffset + height / 2) / scale
+    )})`,
+    xOffset + width / 2,
+    infoY + fontSmall * 1.5
+  );
 
   ctx.shadowBlur = 0;
 }

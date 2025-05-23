@@ -1,64 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Pixel Map Generator</title>
-  <link rel="stylesheet" href="../css/pixelmap.css">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;600&display=swap" rel="stylesheet">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body>
-  <header class="topbar">
-    <div class="branding">🧱 Pixel Map Generator</div>
-  </header>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Pixel Map Generator</title>
+    <link rel="stylesheet" href="../css/pixelmap.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="branding">🧱 Pixel Map Generator</div>
+    </header>
 
-  <div class="layout">
-    <aside class="sidebar">
-      <form id="panelForm">
-        <label for="selectedModel">LED Model</label>
-        <select id="selectedModel" onchange="mostrarDotPitch(); refreshScreenList()">
-          <option disabled selected>Loading models...</option>
-        </select>
-        <div id="dotPitchInfo" class="info-line"></div>
+    <div class="layout">
+      <aside class="sidebar">
+        <form id="panelForm">
+          <label for="selectedModel">LED Model</label>
+          <select
+            id="selectedModel"
+            onchange="mostrarDotPitch(); refreshScreenList()"
+          >
+            <option disabled selected>Loading models...</option>
+          </select>
+          <div id="dotPitchInfo" class="info-line"></div>
 
-        <button type="button" onclick="addScreen()" class="add-screen-btn">+ Add Screen</button>
-      </form>
+          <button type="button" onclick="addScreen()" class="add-screen-btn">
+            + Add Screen
+          </button>
+        </form>
 
-      <p class="hint">☰ Drag to reorder screens</p>
-      <div id="dynamicInputs" class="draggable-wrapper"></div>
-    </aside>
+        <p class="hint">☰ Drag to reorder screens</p>
+        <div id="dynamicInputs" class="draggable-wrapper"></div>
+      </aside>
 
-    <main class="main-content">
-      <div class="preview-header">
-        <h2>Preview</h2>
-        <button id="exportBtn" onclick="exportAsPng()">Export PNG</button>
-      </div>
+      <main class="main-content">
+        <div class="preview-header">
+          <h2>Preview</h2>
+          <button id="exportBtn" onclick="exportAsPng()">Export PNG</button>
+        </div>
 
-      <canvas id="panelCanvasPreview"></canvas>
-      <canvas id="panelCanvasOriginal" style="display: none;"></canvas>
+        <!-- Preview canvas + results dentro do mesmo bloco -->
+        <div id="panelCanvasWrapper">
+          <canvas id="panelCanvasPreview"></canvas>
+          <canvas id="panelCanvasOriginal" style="display: none"></canvas>
+          <div id="results"></div>
+        </div>
+      </main>
+    </div>
 
-      <div id="results"></div>
-    </main>
-  </div>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="../js/panels.js"></script>
+    <script src="../js/pixelmap.js"></script>
+    <script src="../js/pixelmapDraw.js"></script>
 
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-  <script src="../js/panels.js"></script>
-  <script src="../js/pixelmap.js"></script>
-  <script src="../js/pixelmapDraw.js"></script>
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        populateModelSelect();
 
-  <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      populateModelSelect();
+        new Sortable(document.getElementById("dynamicInputs"), {
+          animation: 150,
+          handle: ".drag-handle",
+          onEnd: reorderScreensFromDOM,
+        });
 
-      new Sortable(document.getElementById('dynamicInputs'), {
-        animation: 150,
-        handle: '.drag-handle',
-        onEnd: reorderScreensFromDOM
+        // Cria a screen default automaticamente
+        setTimeout(() => addScreen(), 200);
       });
-
-      // Cria a screen default automaticamente
-      setTimeout(() => addScreen(), 200);
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>
