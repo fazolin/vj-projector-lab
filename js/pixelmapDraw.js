@@ -1,123 +1,117 @@
-function getContrastingColor(hex, strength = 0.4) {
-  const r = 255 - parseInt(hex.substr(1, 2), 16);
-  const g = 255 - parseInt(hex.substr(3, 2), 16);
-  const b = 255 - parseInt(hex.substr(5, 2), 16);
-  return `rgba(${r}, ${g}, ${b}, ${strength})`;
-}
+function drawPixelMap(paineis, canvasOrig, canvasPrev, totalLarguraPx, maxAlturaPx) {
+  canvasOrig.width = totalLarguraPx;
+  canvasOrig.height = maxAlturaPx;
 
-function drawPixelMap(
-  paineis,
-  canvasOrig,
-  canvasPrev,
-  totalLarguraPx,
-  maxAlturaPx
-) {
-  canvasOrig.width = totalLarguraPx + 20;
-  canvasOrig.height = maxAlturaPx + 40;
-
-  canvasPrev.width = totalLarguraPx + 20;
-  canvasPrev.height = maxAlturaPx + 40;
-
-  const ctxOrig = canvasOrig.getContext("2d");
-  const ctxPrev = canvasPrev.getContext("2d");
-
+  const ctxOrig = canvasOrig.getContext('2d');
   ctxOrig.clearRect(0, 0, canvasOrig.width, canvasOrig.height);
+
+  let offsetX = 0;
+  paineis.forEach((painel) => {
+    drawSinglePanel(ctxOrig, offsetX, painel, 1, painel.id);
+    offsetX += painel.totalX;
+  });
+
+const wrapper = canvasPrev.parentElement;
+const wrapperWidth = wrapper.clientWidth;
+const wrapperHeight = window.innerHeight - wrapper.getBoundingClientRect().top - 120;
+
+const scale = Math.min(wrapperWidth / totalLarguraPx, wrapperHeight / maxAlturaPx, 1);
+canvasPrev.width = totalLarguraPx * scale;
+canvasPrev.height = maxAlturaPx * scale;
+
+
+  const ctxPrev = canvasPrev.getContext('2d');
   ctxPrev.clearRect(0, 0, canvasPrev.width, canvasPrev.height);
 
-  const cores = [
-    "#FF6B6B",
-    "#FFD93D",
-    "#6BCB77",
-    "#4D96FF",
-    "#FF9F1C",
-    "#845EC2",
-    "#F9C74F",
-    "#00C9A7",
-  ];
-  let xOffset = 0;
+  offsetX = 0;
+  paineis.forEach((painel) => {
+    drawSinglePanel(ctxPrev, offsetX * scale, painel, scale, painel.id);
+    offsetX += painel.totalX;
+  });
+}
 
-  for (let i = 0; i < paineis.length; i++) {
-    const p = paineis[i];
-    const screenColor = cores[p.id % cores.length];
+function drawSinglePanel(ctx, xOffset, painel, scale = 1, id = 0) {
+  const { totalX, totalY, alinhamento, modX, modY, modelo, nome } = painel;
+  const resX = modelo.resolucaoX;
+  const resY = modelo.resolucaoY;
 
-    let yOffset = 0;
-    if (p.alinhamento === "top") yOffset = 0;
-    if (p.alinhamento === "middle") yOffset = (maxAlturaPx - p.alturaPx) / 2;
-    if (p.alinhamento === "bottom") yOffset = maxAlturaPx - p.alturaPx;
+  const width = totalX * scale;
+  const height = totalY * scale;
 
-    [ctxOrig, ctxPrev].forEach((ctx) => {
-      const altColor = getContrastingColor(screenColor, 0.4);
+  let yOffset = 0;
+  const canvasHeight = ctx.canvas.height / scale;
 
-      const tileW = 50;
-      const tileH = 50;
+  if (alinhamento === 'top') yOffset = 0;
+  else if (alinhamento === 'middle') yOffset = (canvasHeight - totalY) / 2 * scale;
+  else if (alinhamento === 'bottom') yOffset = (canvasHeight - totalY) * scale;
 
-      for (let ty = 0; ty < p.modY; ty++) {
-        for (let tx = 0; tx < p.modX; tx++) {
-          const tone = (tx + ty) % 2 === 0 ? screenColor : altColor;
-          ctx.fillStyle = tone;
-          ctx.fillRect(
-            xOffset + tx * tileW,
-            yOffset + ty * tileH,
-            tileW,
-            tileH
-          );
-        }
-      }
+  // Paleta fixa
+  const palette = ['#1d9bf0', '#198754', '#e83e8c', '#ffc107', '#6610f2', '#20c997', '#fd7e14'];
+  const baseColor = palette[id % palette.length];
 
-      const centerX = xOffset + p.larguraPx / 2;
-      const centerY = yOffset + p.alturaPx / 2;
-      const radius = Math.min(p.larguraPx, p.alturaPx) / 2;
-
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "#ffffff";
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(xOffset, yOffset);
-      ctx.lineTo(xOffset + p.larguraPx, yOffset + p.alturaPx);
-      ctx.moveTo(xOffset + p.larguraPx, yOffset);
-      ctx.lineTo(xOffset, yOffset + p.alturaPx);
-      ctx.stroke();
-
-      // Font sizes
-      const nameFontSize = Math.min(p.larguraPx * 0.25, 38);
-      const infoFontSize = Math.min(p.larguraPx * 0.15, 22);
-
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-
-      // Name (larger font)
-      ctx.font = `600 ${nameFontSize}px 'IBM Plex Mono', monospace`;
-      ctx.shadowColor = "black";
-      ctx.shadowBlur = 4;
-      ctx.shadowOffsetX = 1;
-      ctx.shadowOffsetY = 1;
-      ctx.fillStyle = "#ffffff";
-      ctx.fillText(p.nome, centerX, centerY - nameFontSize);
-
-      // Info (smaller font)
-      ctx.font = `400 ${infoFontSize}px 'IBM Plex Mono', monospace`;
-      ctx.fillText(
-        `Resolution: ${p.modX * p.modelo.resolucaoX}x${
-          p.modY * p.modelo.resolucaoY
-        }`,
-        centerX,
-        centerY
-      );
-      ctx.fillText(
-        `Position: x: ${xOffset}, y: ${Math.round(yOffset)}`,
-        centerX,
-        centerY + infoFontSize + 4
-      );
-
-      // Reset shadow
-      ctx.shadowBlur = 0;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 0;
-    });
-
-    xOffset += p.larguraPx;
+  function adjustColor(hex, amt) {
+    let col = parseInt(hex.slice(1), 16);
+    let r = Math.min(255, ((col >> 16) & 0xff) + amt);
+    let g = Math.min(255, ((col >> 8) & 0xff) + amt);
+    let b = Math.min(255, (col & 0xff) + amt);
+    return `rgb(${r},${g},${b})`;
   }
+
+  const color1 = baseColor;
+  const color2 = adjustColor(baseColor, -30);
+
+  for (let y = 0; y < modY; y++) {
+    for (let x = 0; x < modX; x++) {
+      ctx.fillStyle = (x + y) % 2 === 0 ? color1 : color2;
+      ctx.fillRect(
+        xOffset + x * resX * scale,
+        yOffset + y * resY * scale,
+        resX * scale,
+        resY * scale
+      );
+    }
+  }
+
+  // Círculo central
+  const circleRadius = Math.min(totalX, totalY) * scale / 2;
+  ctx.beginPath();
+  ctx.arc(
+    xOffset + width / 2,
+    yOffset + height / 2,
+    circleRadius,
+    0,
+    Math.PI * 2
+  );
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Diagonais
+  ctx.beginPath();
+  ctx.moveTo(xOffset, yOffset);
+  ctx.lineTo(xOffset + width, yOffset + height);
+  ctx.moveTo(xOffset + width, yOffset);
+  ctx.lineTo(xOffset, yOffset + height);
+  ctx.stroke();
+
+  // Título
+  const fontBase = Math.min(width * 0.12, height * 0.16);
+  ctx.font = `${fontBase}px 'Roboto Condensed', sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#fff";
+  ctx.shadowColor = "#000";
+  ctx.shadowBlur = 3;
+  ctx.fillText(nome, xOffset + width / 2, yOffset + height / 2 - fontBase * 0.4);
+
+  // Infos menores
+  const fontSmall = height * 0.048;
+  ctx.font = `${fontSmall}px 'Roboto Condensed', sans-serif`;
+  ctx.shadowBlur = 2;
+  const text1 = `${totalX}x${totalY}`;
+  const text2 = `(${totalX}px x ${totalY}px)`;
+  ctx.fillText(text1, xOffset + width / 2, yOffset + height / 2 + fontSmall * 0.3);
+  ctx.fillText(text2, xOffset + width / 2, yOffset + height / 2 + fontSmall * 1.4);
+
+  ctx.shadowBlur = 0;
 }
